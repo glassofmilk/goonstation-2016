@@ -1028,6 +1028,14 @@
 	upperfluc = 750
 	lowerfluc = -500
 
+/datum/commodity/junk/circus_board
+	comname = "Circus board"
+	comtype = /obj/item/peripheral/card_scanner/clownifier
+	desc = "A cheap imported ID scanner module. It looks sticky. Like, WAY sticker than a computer module should be."
+	price = 150
+	upperfluc = 50
+	lowerfluc = -50
+
 /////////////////////////////////
 ///////food trader //////////////
 /////////////////////////////////
