@@ -934,6 +934,7 @@
 		src.goods_sell += new /datum/commodity/costume/light_borg(src)
 		src.goods_sell += new /datum/commodity/costume/utena(src)
 		src.goods_sell += new /datum/commodity/balloons(src)
+		src.goods_well += new /datum/commodity/junk/circus_board(src)
 		/////////////////////////////////////////////////////////
 		//// buy list ///////////////////////////////////////////
 		/////////////////////////////////////////////////////////
