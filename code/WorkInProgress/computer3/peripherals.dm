@@ -962,6 +962,7 @@
 	var/obj/item/card/id/authid = null
 	var/can_manage_access = 0 //Can it change a card's accesses?
 	var/can_manage_money = 0 //Can it adjust a card's money balance?
+	var/clownifies_card = 0 //Does it set the card's assignment to clown on ejecting?
 
 	editor
 		name = "ID modifier module"
@@ -979,10 +980,25 @@
 			if(src.authid)
 				status_text = "Balance: [authid.money]"
 			return status_text
+	
+	clownifier //An ID scanner that set's the user's assignment to "Clown" on ejecting. What a fun prank!
+		name = "Circus board"
+		desc = "A weird-looking peripheral board made out of brightly-colored plastic. It looks like there's a slot to insert an ID card."
+		icon_state = "gpu_mod"
+		func_tag = "CLOWN_ID_SCANNER"
+		clownifies_card = 1
+
+		return_badge()
+			var/dat = "<font face='Comic Sans MS'>Card: <a href='?src=\ref[src];card=1'>[src.authid ? "Eject" : "-----"]</a></font>"
+			return dat
 
 	return_status_text()
 		var/status_text = "No card loaded"
 		if(src.authid)
+			if (src.clownifies_card)
+				src.authid.assignment = "Clown"
+				src.authid.update_name()
+				playsound(src.host.loc, "sound/items/bikehorn.ogg", 50, 1)
 			status_text = "Card: [authid.registered]"
 		return status_text
 
