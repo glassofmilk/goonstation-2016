@@ -438,6 +438,7 @@
 
 	for (var/obj/item/device/pda2/PDA in src.contents)
 		PDA.owner = src.real_name
+		PDA.ownerAssignment = JOB.name
 		PDA.name = "PDA-[src.real_name]"
 
 	boutput(src, "<span style=\"color:blue\">Your pin to your ID is: [C.pin]</span>")

@@ -149,6 +149,7 @@
 							for (var/department_id in page_departments)
 								. += "<li><a href='byond://?src=\ref[src];input=message;target=[page_departments[department_id]];department=1'>DEPT-[department_id]</a></li>"
 
+							var/pdaOwnerNames = list()
 							for (var/P_id in src.detected_pdas)
 								var/P_name = src.detected_pdas[P_id]
 								if (!P_name)
@@ -157,6 +158,11 @@
 								else if (P_id == src.master.net_id) //I guess this can happen if somebody copies the system file.
 									src.detected_pdas -= P_id
 									continue
+								pdaOwnerNames += P_name
+								pdaOwnerNames[P_name] = P_id
+							pdaOwnerNames = sortList(pdaOwnerNames)
+							for (var/P_name in pdaOwnerNames)
+								var/P_id = pdaOwnerNames[P_name]
 
 								. += "<li><a href='byond://?src=\ref[src];input=message;target=[P_id]'>PDA-[P_name]</a>"
 								. += " (<a href='byond://?src=\ref[src];input=send_file;target=[P_id]'>*Send File*</a>)"
@@ -359,6 +365,7 @@
 						signal.data["file_ext"] = src.clipboard.extension
 						signal.data["file_size"] = src.clipboard.size
 						signal.data["sender_name"] = src.master.owner
+						signal.data["sender_assignment"] = src.master.ownerAssignment
 						//signal.data["sender"] = src.master.net_id
 						signal.data["address_1"] = target_id
 						src.post_signal(signal)
@@ -534,13 +541,20 @@
 					if(!message_on || !signal.data["message"])
 						return
 
-					if(signal.data["group"]) //Check to see if it's our ~mailgroup~
-						if(signal.data["group"] != src.master.mailgroup)
+					var/groupAddress = signal.data["group"]
+					if(groupAddress) //Check to see if it's our ~mailgroup~
+						if(groupAddress != src.master.mailgroup)
 							return
 
 					var/sender = signal.data["sender_name"]
 					if(!sender)
 						sender = "!Unknown!"
+					var/senderAssignment = signal.data["sender_assignment"]
+					var/messageFrom = sender
+					if (senderAssignment)
+						messageFrom = "[messageFrom] - [senderAssignment]"
+					if (groupAddress)
+						messageFrom = "[messageFrom] (to [groupAddress])"
 
 					if((length(signal.data["sender"]) == 8) && (ishex(signal.data["sender"])) )
 						if (!(signal.data["sender"] in src.detected_pdas))
@@ -550,8 +564,7 @@
 						src.master.pdasay_autocomplete[sender] = signal.data["sender"]
 
 					//Only add the reply link if the sender is another pda2.
-
-					var/senderstring = "From <a href='byond://?src=\ref[src];input=message;target=[signal.data["sender"]]'>[sender]</a>"
+					var/senderstring = "From <a href='byond://?src=\ref[src];input=message;target=[signal.data["sender"]]'>[messageFrom]</a>"
 
 					src.message_note += "<i><b>&larr; [senderstring]:</b></i><br>[signal.data["message"]]<br>"
 					var/alert_beep = null //Don't beep if set to silent.
@@ -569,7 +582,7 @@
 
 					if(ismob(master.loc)) //Alert the person holding us.
 						var/mob/M = master.loc
-						boutput(M, "<i><b>[bicon(master)] <a href='byond://?src=\ref[src];input=message;norefresh=1;target=[signal.data["sender"]]'>[sender]</a>:</b></i> [signal.data["message"]]")
+						boutput(M, "<i><b>[bicon(master)] <a href='byond://?src=\ref[src];input=message;norefresh=1;target=[signal.data["sender"]]'>[messageFrom]</a>:</b></i> [signal.data["message"]]")
 
 					src.master.updateSelfDialog()
 
@@ -580,6 +593,7 @@
 					var/filename = signal.data["file_name"]
 					var/sender = signal.data["sender"]
 					var/sendername = signal.data["sender_name"]
+					var/senderassignment = signal.data["sender_assignment"]
 					var/file_ext = signal.data["file_ext"]
 					var/filesize = signal.data["file_size"]
 
@@ -588,6 +602,9 @@
 
 					if(!sendername)
 						sendername = "!Unknown!"
+					var/messageFrom = sendername
+					if (senderassignment)
+						messageFrom = "[sendername] - [senderassignment]"
 
 					if(!(sender in src.detected_pdas))
 						src.detected_pdas += sender
@@ -597,7 +614,7 @@
 
 
 					src.message_note += {"
-<i><b>&larr;File Offer From <a href='byond://?src=\ref[src];input=message;target=[sender]'>[sendername]</a>:</b></i><br>
+<i><b>&larr;File Offer From <a href='byond://?src=\ref[src];input=message;target=[sender]'>[messageFrom]</a>:</b></i><br>
 <a href='byond://?src=\ref[src];message_func=accfile;sender=[sender]'>[filename]</a>
  | Ext: [file_ext ? file_ext : "NONE"]
  | Size: [filesize ? filesize : "???"]<br>"}
@@ -623,6 +640,7 @@
 					sendsig.data_file = src.clipboard.copy_file()
 					sendsig.data["command"] = "file_send"
 					sendsig.data["sender_name"] = src.master.owner
+					sendsig.data["sender_assignment"] = src.master.ownerAssignment
 					sendsig.data["address_1"] = signal.data["sender"]
 					src.post_signal(sendsig)
 
@@ -635,18 +653,22 @@
 						return
 
 					var/sender = signal.data["sender"]
+					var/sendername = signal.data["sender_name"]
+					var/senderassignment = signal.data["sender_assignment"]
 					if(sender != last_filereq_id)
 						return
 
-					var/sender_name = "!UNKNOWN!"
-					if(signal.data["sender_name"])
-						sender_name = signal.data["sender_name"]
+					if(!sendername)
+						sendername = "!Unknown!"
+					var/messageFrom = sendername
+					if (senderassignment)
+						messageFrom = "[sendername] - [senderassignment]"
 
 					if(!signal.data_file)
 						return
 
 					if(signal.data_file.copy_file_to_folder(src.holding_folder))
-						src.message_note += "<b><i>File Accepted from [sender_name]</b></i><br>"
+						src.message_note += "<b><i>File Accepted from [messageFrom]</b></i><br>"
 					return
 
 			// this is now in network_hook
@@ -720,6 +742,7 @@
 			signal.data["command"] = "text_message"
 			signal.data["message"] = message
 			signal.data["sender_name"] = src.master.owner
+			signal.data["sender_assignment"] = src.master.ownerAssignment
 			//signal.data["sender"] = src.master.net_id
 			if (is_department_message)
 				signal.data["group"] = target_id

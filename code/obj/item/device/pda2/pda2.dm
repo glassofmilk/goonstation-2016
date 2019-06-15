@@ -28,6 +28,7 @@
 	var/image/ID_image = null
 
 	var/owner = null
+	var/ownerAssignment = null
 	var/obj/item/disk/data/cartridge/cartridge = null //current cartridge
 	var/datum/computer/file/pda_program/active_program = null
 	var/datum/computer/file/pda_program/os/host_program = null
@@ -449,6 +450,7 @@
 			return
 		if (!src.owner)
 			src.owner = ID.registered
+			src.ownerAssignment = ID.assignment
 			src.name = "PDA-[src.owner]"
 			boutput(user, "<span style=\"color:blue\">Card scanned.</span>")
 			src.updateSelfDialog()
